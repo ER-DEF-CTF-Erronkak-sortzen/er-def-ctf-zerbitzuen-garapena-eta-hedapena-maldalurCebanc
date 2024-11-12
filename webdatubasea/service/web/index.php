@@ -1,6 +1,6 @@
 <?php
 // Conexión a la base de datos
-$db = new PDO('mysql:host=localhost;dbname=nombre_database', 'usuario', 'password');
+$db = new PDO('mysql:host=db;dbname=faulty_db', 'dev1', 'dev1_password');
 
 // Inserción de datos
 if (isset($_POST['name'])) {

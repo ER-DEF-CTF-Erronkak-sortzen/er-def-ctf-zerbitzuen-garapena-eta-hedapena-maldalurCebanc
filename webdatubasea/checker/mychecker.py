@@ -6,8 +6,9 @@ import http.client
 import socket
 import paramiko
 import hashlib
-PORT_WEB1 = 80
-PORT_WEB2 = 22
+PORT_WEB = 80
+PORT_XSS = 5000
+PORT_DB = 3306
 def ssh_connect():
     def decorator(func):
         def wrapper(*args, **kwargs):
@@ -31,7 +32,7 @@ class MyChecker(checkerlib.BaseChecker):
 
     def __init__(self, ip, team):
         checkerlib.BaseChecker.__init__(self, ip, team)
-        self._baseurl = f'http://[{self.ip}]:{PORT_WEB1}'
+        self._baseurl = f'http://[{self.ip}]:{PORT_WEB}'
         logging.info(f"URL: {self._baseurl}")
 
     @ssh_connect()
@@ -47,7 +48,7 @@ class MyChecker(checkerlib.BaseChecker):
 
     def check_service(self):
         # check if ports are open
-        if not self._check_port_web1(self.ip, PORT_WEB1) or not self._check_port_web2(self.ip, PORT_WEB2):
+        if not self._check_port_xss(self.ip, PORT_XSS) or not self._check_port_web(self.ip, PORT_WEB):
             return checkerlib.CheckResult.DOWN
         #else
         # check if server is Apache 2.4.50
@@ -56,13 +57,13 @@ class MyChecker(checkerlib.BaseChecker):
         # check if dev1 user exists in webdatubasea_ssh docker
         if not self._check_db_user('dev1'):
             return checkerlib.CheckResult.FAULTY
-        file_path_web = ''
+        file_path_web = '/var/www/html/index.php'
         # check if index.hmtl from webdatubasea_web has been changed by comparing its hash with the hash of the original file
         if not self._check_web_integrity(file_path_web):
             return checkerlib.CheckResult.FAULTY            
-        file_path_ssh = ''
+        file_path_xss = '/app/app.py'
         # check if /etc/sshd_config from webdatubasea_ssh has been changed by comparing its hash with the hash of the original file
-        if not self._check_xss_integrity(file_path_web):
+        if not self._check_xss_integrity(file_path_xss):
             return checkerlib.CheckResult.FAULTY            
         return checkerlib.CheckResult.OK
     
@@ -79,9 +80,17 @@ class MyChecker(checkerlib.BaseChecker):
             return checkerlib.CheckResult.FLAG_NOT_FOUND
         return checkerlib.CheckResult.OK
         
-    
+    @ssh_connect()
+    def _check_php_version(self):
+        ssh_session = self.client
+        command = f"docker exec webdatubasea_web_1 sh -c 'php -v | grep \"PHP/8.3.13\"'"
+        stdin, stdout, stderr = ssh_session.exec_command(command)
 
-
+        if stdout:
+            return True
+        else:
+            return False
+        
     @ssh_connect()
     #Function to check if an user exists
     def _check_db_user(self, username):
@@ -142,8 +151,8 @@ class MyChecker(checkerlib.BaseChecker):
 
         output = stdout.read().decode().strip()
         return flag == output
-
-    def _check_port_web1(self, ip, port):
+    
+    def _check_port_db(self, ip, port):
         try:
             conn = http.client.HTTPConnection(ip, port, timeout=5)
             conn.request("GET", "/")
@@ -156,7 +165,20 @@ class MyChecker(checkerlib.BaseChecker):
             if conn:
                 conn.close()
 
-    def _check_port_web2(self, ip, port):
+    def _check_port_web(self, ip, port):
+        try:
+            conn = http.client.HTTPConnection(ip, port, timeout=5)
+            conn.request("GET", "/")
+            response = conn.getresponse()
+            return response.status == 200
+        except (http.client.HTTPException, socket.error) as e:
+            print(f"Exception port: {e}")
+            return False
+        finally:
+            if conn:
+                conn.close()
+
+    def _check_port_xss(self, ip, port):
         try:
             conn = http.client.HTTPConnection(ip, port, timeout=5)
             conn.request("GET", "/")
@@ -169,16 +191,6 @@ class MyChecker(checkerlib.BaseChecker):
             if conn:
                 conn.close()
 
-    @ssh_connect()
-    def _check_php_version(self):
-        ssh_session = self.client
-        command = f"docker exec webdatubasea_web_1 sh -c 'php -v | grep \"PHP\"'"
-        stdin, stdout, stderr = ssh_session.exec_command(command)
-
-        if stdout:
-            return True
-        else:
-            return False
   
 if __name__ == '__main__':
     checkerlib.run_check(MyChecker)
