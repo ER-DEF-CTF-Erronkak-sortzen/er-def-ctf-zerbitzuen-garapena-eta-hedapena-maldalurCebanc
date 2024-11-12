@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Comentarios</title>
+</head>
+<body>
+    <h1>Deja un comentario</h1>
+    <form action="/" method="POST">
+        <textarea name="comment" rows="4" cols="50" placeholder="Escribe tu comentario aquí..."></textarea><br>
+        <button type="submit">Enviar</button>
+    </form>
+
+    <h2>Comentarios:</h2>
+    <ul>
+        {% for comment in comments %}
+            <li>{{ comment | safe }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
