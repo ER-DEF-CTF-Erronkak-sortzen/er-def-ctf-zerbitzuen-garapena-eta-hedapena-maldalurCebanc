@@ -96,7 +96,6 @@ class MyChecker(checkerlib.BaseChecker):
     @ssh_connect()
     #Function to check if an user exists
     def _check_db_user(self, username):
-        print(username)
         ssh_session = self.client
         command = (
             f"docker exec webdatubasea_web_1 sh -c "
