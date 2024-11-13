@@ -55,6 +55,8 @@ class MyChecker(checkerlib.BaseChecker):
         if not self._check_php_version():
             return checkerlib.CheckResult.FAULTY
         # check if dev1 user exists in webdatubasea_ssh docker
+        if not self._check_db_user('root'):
+            return checkerlib.CheckResult.FAULTY
         if not self._check_db_user('dev1'):
             return checkerlib.CheckResult.FAULTY
         file_path_web = '/var/www/html/index.php'
@@ -83,7 +85,7 @@ class MyChecker(checkerlib.BaseChecker):
     @ssh_connect()
     def _check_php_version(self):
         ssh_session = self.client
-        command = f"docker exec webdatubasea_web_1 sh -c 'php -v | grep \"PHP/8.3.13\"'"
+        command = f"docker exec webdatubasea_web_1 sh -c 'php -v | grep \"PHP 8.3.13\"'"
         stdin, stdout, stderr = ssh_session.exec_command(command)
 
         if stdout:
@@ -94,14 +96,16 @@ class MyChecker(checkerlib.BaseChecker):
     @ssh_connect()
     #Function to check if an user exists
     def _check_db_user(self, username):
+        print(username)
         ssh_session = self.client
         command = (
-            f"docker exec webdatubasea_ssh_1 sh -c "
-            f"'mysql -u$DB_USER -p$DB_PASSWORD -e \"SELECT User FROM mysql.user WHERE User = '{username}';\"'"
+            f"docker exec webdatubasea_web_1 sh -c "
+            f"\"mysql -h db -u root -proot_password -e \\\"SELECT User FROM mysql.user WHERE User = '{username}';\\\"\""
         )
         stdin, stdout, stderr = ssh_session.exec_command(command)
+        output = stdout.read().decode()
 
-        if stdout and username in stdout.read().decode():
+        if username in output:
             return True
         return False
       
@@ -114,7 +118,8 @@ class MyChecker(checkerlib.BaseChecker):
             return False
         
         output = stdout.read().decode().strip()
-        return hashlib.md5(output.encode()).hexdigest() == 'a4ed71eb4f7c89ff868088a62fe33036'
+        # print(hashlib.md5(output.encode()).hexdigest())
+        return hashlib.md5(output.encode()).hexdigest() == '0ebabf7a4d123c850591d9f2499271a6'
     
     @ssh_connect()
     def _check_xss_integrity(self, path):
@@ -124,9 +129,8 @@ class MyChecker(checkerlib.BaseChecker):
         if stderr.channel.recv_exit_status() != 0:
             return False
         output = stdout.read().decode().strip()
-        print (hashlib.md5(output.encode()).hexdigest())
-
-        return hashlib.md5(output.encode()).hexdigest() == 'ba55c65e08e320f1225c76f810f1328b'
+        # print (hashlib.md5(output.encode()).hexdigest())
+        return hashlib.md5(output.encode()).hexdigest() == '234c06b516486f37ef4c9550c249e279'
  
     # Private Funcs - Return False if error
     def _add_new_flag(self, ssh_session, flag):
@@ -172,7 +176,7 @@ class MyChecker(checkerlib.BaseChecker):
             response = conn.getresponse()
             return response.status == 200
         except (http.client.HTTPException, socket.error) as e:
-            print(f"Exception port: {e}")
+            print(f"Exception: {e}")
             return False
         finally:
             if conn:

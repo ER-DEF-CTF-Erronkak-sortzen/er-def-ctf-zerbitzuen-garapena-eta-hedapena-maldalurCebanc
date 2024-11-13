@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # Esperar a que el servicio MySQL esté disponible
-until mysql -h db -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "SELECT 1" > /dev/null 2>&1; do
+until mysql -h db -u "$DB_USER" -p"$DB_PASSWORD" -e "SELECT 1" > /dev/null 2>&1; do
     echo "Esperando a que la base de datos MySQL esté disponible..."
     sleep 1
 done
 
 # Crear la tabla en la base de datos (si no existe)
 echo "Creando la tabla 'usuarios' si no existe..."
-mysql -h db -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "
+mysql -h db -u "$DB_USER" -p"$DB_PASSWORD" -e "
     CREATE DATABASE IF NOT EXISTS faulty_db;
     USE faulty_db;
     CREATE TABLE IF NOT EXISTS usuarios (
