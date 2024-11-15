@@ -16,6 +16,8 @@ services:
             context: ./web
             dockerfile: Dockerfile
         environment:
+            ROOT: root
+            ROOT_PASSWORD: root_password
             DB_HOST: db
             DB_USER: dev1
             DB_PASSWORD: dev1_password
@@ -25,10 +27,3 @@ services:
             - "9000:9000"
         depends_on:
             - db
-    xss:
-        build:
-            context: ./xss
-            dockerfile: Dockerfile
-        ports:
-            - "5000:5000"
-    

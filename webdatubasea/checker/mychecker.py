@@ -37,18 +37,20 @@ class MyChecker(checkerlib.BaseChecker):
 
     @ssh_connect()
     def place_flag(self, tick):
+        # DB Flag
+        logging.info('creating db flag')
         flag = checkerlib.get_flag(tick)
         creds = self._add_new_flag(self.client, flag)
         if not creds:
             return checkerlib.CheckResult.FAULTY
-        logging.info('created')
+        logging.info('created db flag')
         checkerlib.store_state(str(tick), creds)
         checkerlib.set_flagid(str(tick))
         return checkerlib.CheckResult.OK
 
     def check_service(self):
         # check if ports are open
-        if not self._check_port_xss(self.ip, PORT_XSS) or not self._check_port_web(self.ip, PORT_WEB):
+        if not self._check_port_web(self.ip, PORT_WEB):
             return checkerlib.CheckResult.DOWN
         #else
         # check if server is Apache 2.4.50
@@ -59,14 +61,10 @@ class MyChecker(checkerlib.BaseChecker):
             return checkerlib.CheckResult.FAULTY
         if not self._check_db_user('dev1'):
             return checkerlib.CheckResult.FAULTY
-        file_path_web = '/var/www/html/index.php'
+        file_path_web = '/var/www/html/index.html'
         # check if index.hmtl from webdatubasea_web has been changed by comparing its hash with the hash of the original file
         if not self._check_web_integrity(file_path_web):
-            return checkerlib.CheckResult.FAULTY            
-        file_path_xss = '/app/app.py'
-        # check if /etc/sshd_config from webdatubasea_ssh has been changed by comparing its hash with the hash of the original file
-        if not self._check_xss_integrity(file_path_xss):
-            return checkerlib.CheckResult.FAULTY            
+            return checkerlib.CheckResult.FAULTY                      
         return checkerlib.CheckResult.OK
     
     def check_flag(self, tick):
@@ -79,6 +77,7 @@ class MyChecker(checkerlib.BaseChecker):
         #     return checkerlib.CheckResult.FLAG_NOT_FOUND
         flag_present = self._check_flag_present(flag)
         if not flag_present:
+            logging.info('db flag not found')
             return checkerlib.CheckResult.FLAG_NOT_FOUND
         return checkerlib.CheckResult.OK
         
@@ -117,8 +116,8 @@ class MyChecker(checkerlib.BaseChecker):
             return False
         
         output = stdout.read().decode().strip()
-        # print(hashlib.md5(output.encode()).hexdigest())
-        return hashlib.md5(output.encode()).hexdigest() == '0ebabf7a4d123c850591d9f2499271a6'
+        print(hashlib.md5(output.encode()).hexdigest())
+        return hashlib.md5(output.encode()).hexdigest() == '99a0004b63ced8dfef0d63de1c1955e9'
     
     @ssh_connect()
     def _check_xss_integrity(self, path):
@@ -128,31 +127,51 @@ class MyChecker(checkerlib.BaseChecker):
         if stderr.channel.recv_exit_status() != 0:
             return False
         output = stdout.read().decode().strip()
-        # print (hashlib.md5(output.encode()).hexdigest())
+        print (hashlib.md5(output.encode()).hexdigest())
         return hashlib.md5(output.encode()).hexdigest() == '234c06b516486f37ef4c9550c249e279'
- 
+
     # Private Funcs - Return False if error
     def _add_new_flag(self, ssh_session, flag):
-        # Execute the file creation command in the container
-        command = f"docker exec webdatubasea_xss_1 sh -c 'echo {flag} >> /tmp/flag.txt'"
+        # Escapar el valor de la bandera para evitar inyección SQL
+        escaped_flag = flag.replace("'", "\\'")  # Escapar comillas simples
+
+        # Comando completo para ejecutar dentro del contenedor
+        command = (
+            f"docker exec webdatubasea_web_1 sh -c "
+            f"\"mysql -h db -u root -proot_password -e \\\""
+            f"USE faulty_db; INSERT INTO flags (flag) VALUES ('{escaped_flag}');\\\"\""
+        )
+
+        # Ejecutar el comando en el contenedor a través de SSH
         stdin, stdout, stderr = ssh_session.exec_command(command)
 
-        # Check if the command executed successfully
-        if stderr.channel.recv_exit_status() != 0:
+        # Comprobar el estado de salida del comando
+        exit_status = stdout.channel.recv_exit_status()
+
+        if exit_status != 0:
+            # Registrar el error para depuración
+            error_message = stderr.read().decode()
+            print(f"Error ejecutando comando: {error_message}")
             return False
-        
+
         # Return the result
         return {'flag': flag}
-
+    
     @ssh_connect()
     def _check_flag_present(self, flag):
         ssh_session = self.client
-        command = f"docker exec webdatubasea_xss_1 sh -c 'grep {flag} /tmp/flag.txt'"
+        command = (
+            f"docker exec webdatubasea_db_1 sh -c "
+            f"\"mysql -h db -u root -proot_password -sse "
+            f"\\\"USE faulty_db; "
+            f"SELECT flag FROM flags WHERE flag = '{flag}' ORDER BY id DESC LIMIT 1;\\\"\""
+        )
         stdin, stdout, stderr = ssh_session.exec_command(command)
-        if stderr.channel.recv_exit_status() != 0:
+        output = stdout.read().decode().strip()
+        if output != flag:
             return False
 
-        output = stdout.read().decode().strip()
+        
         return flag == output
     
     def _check_port_db(self, ip, port):

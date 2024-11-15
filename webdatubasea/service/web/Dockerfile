@@ -9,6 +9,9 @@ RUN apt-get update && apt-get install -y \
     zip \
     default-mysql-client
 
+    # Instala el controlador PDO MySQL
+RUN docker-php-ext-install pdo pdo_mysql
+
 # Configura la variable de entorno para el directorio de trabajo
 WORKDIR /var/www/html
 
