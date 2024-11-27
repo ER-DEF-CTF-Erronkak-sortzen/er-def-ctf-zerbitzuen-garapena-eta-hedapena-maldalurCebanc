@@ -7,7 +7,6 @@ import socket
 import paramiko
 import hashlib
 PORT_WEB = 80
-PORT_XSS = 5000
 PORT_DB = 3306
 def ssh_connect():
     def decorator(func):
@@ -52,7 +51,9 @@ class MyChecker(checkerlib.BaseChecker):
         # check if ports are open
         if not self._check_port_web(self.ip, PORT_WEB):
             return checkerlib.CheckResult.DOWN
-        #else
+        # check if dev1 user exists in pasapasa_ssh docker
+        if not self._check_ssh_user('dev1'):
+            return checkerlib.CheckResult.FAULTY
         # check if server is Apache 2.4.50
         if not self._check_php_version():
             return checkerlib.CheckResult.FAULTY
@@ -64,8 +65,11 @@ class MyChecker(checkerlib.BaseChecker):
         file_path_web = '/var/www/html/index.html'
         # check if index.hmtl from webdatubasea_web has been changed by comparing its hash with the hash of the original file
         if not self._check_web_integrity(file_path_web):
+            return checkerlib.CheckResult.FAULTY        
+        file_path_ssh = '/etc/ssh/sshd_config'
+        if not self._check_web_integrity(file_path_ssh):
             return checkerlib.CheckResult.FAULTY                      
-        return checkerlib.CheckResult.OK
+        return checkerlib.CheckResult.OK        
     
     def check_flag(self, tick):
         if not self.check_service():
@@ -80,6 +84,16 @@ class MyChecker(checkerlib.BaseChecker):
             logging.info('db flag not found')
             return checkerlib.CheckResult.FLAG_NOT_FOUND
         return checkerlib.CheckResult.OK
+    
+    @ssh_connect()
+    #Function to check if an user exists
+    def _check_ssh_user(self, username):
+        ssh_session = self.client
+        command = f"docker exec webdatubasea_web_1 sh -c 'id {username}'"
+        stdin, stdout, stderr = ssh_session.exec_command(command)
+        if stderr.channel.recv_exit_status() != 0:
+            return False
+        return True
         
     @ssh_connect()
     def _check_php_version(self):

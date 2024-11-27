@@ -1,24 +1,24 @@
 # Service definition:
 - We have two dockers: 
-1. An Ubuntu (latest version) one which contains the flags. 
-2. One who has install apache service. 
-The attacker has access to a web page (web_docker) and has to look for information that can help him accessing the other docker.
-The flags are stored in that last docker's file and attacker has to let them in his T-Submission machine. 
+1. A Mysql Database one which contains the flags. 
+2. The php one who has install all the services. 
+The attacker has access to a web page (web_docker) that has different options to access the information and also the option to create users.
+The flags are stored in db docker database and attacker has to go in with the options provided. 
 
 # Service implementation:
-web docker is configured to take a copy index.html file from the host machine, letting it in '/usr/local/apache2/htdocs/index.html'. 
-ssh docker is configured attending to the following tips:
+web docker is configured to take a copy index.html file from the host machine, letting it in '/var/www/html/index.html'. 
+db docker is configured attending to the following tips:
   - It has openssh-server installed and started. 
-  - It has a user called 'dev1' whose password is 'w3ar3h4ck3r2'. 
+  - It has a user called 'dev1' whose password is 'dev1_password'. 
 
- 'dev1' user's password will never be changed. Moreover, if a team changes it, it will be losing SLa points. 
+ 'dev1' user will never be changed, but password can be changed. Moreover, it has also the same user and password for the database. 
  
 -Flags: 
-    Flags will be stored in 'pasapasa_ssh_1' docker's '/tmp/flags.txt' file. 
+    Flags will be stored in 'pasapasa_db_1' docker's flags in faulty_db database and flags table. 
 
 # About exploting:
-- The attacker has to inspect the index.html document; the credentialas are stored there as plain text. With those credentials, the attacker can log into pasapasa_ssh docker and take the flags from /tmp/flags.txt.
-- The defender should change 'dev1' user's password. 
+- The attacker can use the web to find the flag in the table or create a new db user and get the flag from terminal.
+- The defender should change 'dev1' user's password. It has to change dev1 db user password and remove all the users created. It cas to remove or restrict access to create_user.php and show_info.php.
   
   Attack performed by Team1 against Team 4. 
   Inspect web page in 10.0.0.104
@@ -39,22 +39,14 @@ ssh docker is configured attending to the following tips:
      
 
 # Checker checks:
-- Ports to reach dockers are open (WEB:9797; SSH 8822)
-- User 'dev1' exists in pasapasa_ssh docker. 
-- /etc/sshd_config file from pasapasa_ssh docker has not been changed. 
-- /usr/local/apache2/htdocs/index.html file's content from pasapasa_web docker has not been changed. 
+- Ports to reach dockers are open (WEB:80)
+- User 'dev1' exists in webdatubasea_web docker. 
+- User 'dev1' exists in webdatubasea_db docker. 
+- User 'root' exists in webdatubasea_db docker. 
+- /etc/sshd_config file from webdatubasea_web docker has not been changed. 
+- /var/www/html/index.html file's content from webdatubasea_web docker has not been changed. 
 
-Checks done: 
-- TEAM 0. Stop the container: 'root@team0-services:~# docker stop pasapasa_web_1' It works OK, service's status becomes DOWN. 
-- TEAM 1. Stop the container: 'root@team0-services:~# docker stop pasapasa_ssh_1' It works OK, service's status becomes DOWN.
-- TEAM 2. 'userdel dev1'. It works OK, service's status becomes faulty. 
-- TEAM 3. Change '/etc/sshd_config' file from 'pasapasa_ssh' docker. It works OK, service's status becomes faulty.
-- TEAM 4. Change '/usr/local/apache2/htdocs/index.html' file from 'pasapasa_web' docker. It works OK, service's status becomes faulty.
-- TEAM 5. 'ssh service stop'. It works OK, service's status becomes faulty. 
-- TEAM 0. apt update apache2
+
 # License notes
-Parts from:
-https://github.com/kristianvld/SQL-Injection-Playground
-
 
 

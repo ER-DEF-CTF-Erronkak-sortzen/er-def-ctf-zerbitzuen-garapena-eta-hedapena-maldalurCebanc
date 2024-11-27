@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y \
     # Instala el controlador PDO MySQL
 RUN docker-php-ext-install pdo pdo_mysql
 
+# Create user
+RUN useradd -m dev1 && echo "dev1:dev1_password" | chpasswd
+
 # Configura la variable de entorno para el directorio de trabajo
 WORKDIR /var/www/html
 
