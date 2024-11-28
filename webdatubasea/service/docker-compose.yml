@@ -1,0 +1,29 @@
+version: '3'
+services:
+    db:
+        build:
+            context: ./db
+            dockerfile: Dockerfile
+        environment:
+            MYSQL_ROOT_PASSWORD: root_password
+            MYSQL_DATABASE: faulty_db
+            MYSQL_USER: dev1
+            MYSQL_PASSWORD: dev1_password
+        ports:
+            - "3306:3306"
+    web:
+        build:
+            context: ./web
+            dockerfile: Dockerfile
+        environment:
+            ROOT: root
+            ROOT_PASSWORD: root_password
+            DB_HOST: db
+            DB_USER: dev1
+            DB_PASSWORD: dev1_password
+            DB_NAME: faulty_db
+        ports:
+            - "80:80"
+            - "2222:22"
+        depends_on:
+            - db
