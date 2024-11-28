@@ -1,31 +1,23 @@
-# Usa una imagen base de PHP 8
-FROM php:8-fpm
+FROM php:7.4-cli
 
-# Instala las dependencias necesarias, incluyendo el cliente de MySQL
+# Install required packages (SSH server and MySQL client)
 RUN apt-get update && apt-get install -y \
-    libmcrypt-dev \
-    libssl-dev \
-    build-essential \
-    zip \
-    default-mysql-client
+    openssh-server \
+    default-mysql-client \
+    && mkdir /var/run/sshd
 
-    # Instala el controlador PDO MySQL
-RUN docker-php-ext-install pdo pdo_mysql
+# Copy application files
+WORKDIR /var/www/html
+COPY . .
 
-# Create user
+# Add and configure SSH user
 RUN useradd -m dev1 && echo "dev1:dev1_password" | chpasswd
 
-# Configura la variable de entorno para el directorio de trabajo
-WORKDIR /var/www/html
+# Expose necessary ports
+EXPOSE 80 22
 
-# Copia los archivos del directorio de trabajo a la imagen
-COPY . /var/www/html/
-
-# Copia el script de inicialización
+# Copy and set the entrypoint script
 COPY start.sh /start.sh
+RUN chmod +x /start.sh
 
-# Inicializa el servidor web
-EXPOSE 80
-
-# Configura el comando de inicialización
-CMD ["sh", "/start.sh"]
+CMD ["/start.sh"]

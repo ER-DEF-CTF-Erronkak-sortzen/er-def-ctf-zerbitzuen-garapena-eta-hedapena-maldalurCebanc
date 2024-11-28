@@ -7,7 +7,7 @@ import socket
 import paramiko
 import hashlib
 PORT_WEB = 80
-PORT_DB = 3306
+PORT_SSH = 2222
 def ssh_connect():
     def decorator(func):
         def wrapper(*args, **kwargs):
@@ -65,10 +65,7 @@ class MyChecker(checkerlib.BaseChecker):
         file_path_web = '/var/www/html/index.html'
         # check if index.hmtl from webdatubasea_web has been changed by comparing its hash with the hash of the original file
         if not self._check_web_integrity(file_path_web):
-            return checkerlib.CheckResult.FAULTY        
-        file_path_ssh = '/etc/ssh/sshd_config'
-        if not self._check_web_integrity(file_path_ssh):
-            return checkerlib.CheckResult.FAULTY                      
+            return checkerlib.CheckResult.FAULTY                           
         return checkerlib.CheckResult.OK        
     
     def check_flag(self, tick):
@@ -203,9 +200,10 @@ class MyChecker(checkerlib.BaseChecker):
 
     def _check_port_web(self, ip, port):
         try:
-            conn = http.client.HTTPConnection(ip, port, timeout=5)
+            conn = http.client.HTTPConnection(ip, port, timeout=10)
             conn.request("GET", "/")
             response = conn.getresponse()
+            print(response)
             return response.status == 200
         except (http.client.HTTPException, socket.error) as e:
             print(f"Exception: {e}")

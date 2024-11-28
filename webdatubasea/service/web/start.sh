@@ -43,5 +43,16 @@ mysql -h db -u "$DB_USER" -p"$DB_PASSWORD" -e "
     );
 "
 
-echo "La base de datos está disponible. Iniciando el servidor web..."
+# Create the dev1 user if it doesn't exist
+useradd -m dev1
+
+# Set a root password (Optional)
+echo 'dev1:dev1_password' | chpasswd
+
+# Ensure SSH server is running
+echo "Iniciando el servidor SSH..."
+service ssh start
+
+# Start PHP's built-in web server
+echo "Iniciando el servidor web..."
 php -S 0.0.0.0:80
