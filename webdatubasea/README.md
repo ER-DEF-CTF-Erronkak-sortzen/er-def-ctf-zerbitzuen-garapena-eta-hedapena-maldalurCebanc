@@ -60,5 +60,6 @@ db docker is configured attending to the following tips:
 
 
 # License notes
+GPLv3
 
 
